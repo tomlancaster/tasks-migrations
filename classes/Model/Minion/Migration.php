@@ -71,7 +71,6 @@ class Model_Minion_Migration extends Model
 				$migrations[$migration['group'].':'.$migration['timestamp']] = $migration;
 			}
 		}
-
 		return $migrations;
 	}
 
@@ -167,6 +166,7 @@ class Model_Minion_Migration extends Model
 	 */
 	public function ensure_table_exists()
 	{
+        /*
 		$query = $this->_db->query(Database::SELECT, "SHOW TABLES like '".$this->_table."'");
 
 		if ( ! count($query))
@@ -176,7 +176,8 @@ class Model_Minion_Migration extends Model
 				->render();
 
 			$this->_db->query(NULL, $sql);
-		}
+        }
+         */
 	}
 
 	/**
@@ -189,7 +190,6 @@ class Model_Minion_Migration extends Model
 		// Start out using all the installed groups
 		$groups = $this->fetch_current_versions('group');
 		$available = $this->available_migrations();
-
 		foreach ($available as $migration)
 		{
 			if (array_key_exists($migration['group'], $groups))
@@ -230,7 +230,7 @@ class Model_Minion_Migration extends Model
 	 */
 	protected function _select()
 	{
-		return DB::select('*', DB::expr('CONCAT(`group`, ":", CAST(`timestamp` AS CHAR)) AS `id`'))->from($this->_table);
+		return DB::select('*', DB::expr('"group"||\':\'||CAST("timestamp" AS CHAR) AS "id"'))->from($this->_table);
 	}
 
 	/**
@@ -372,7 +372,7 @@ class Model_Minion_Migration extends Model
 	public function fetch_current_versions($key = 'group', $value = NULL)
 	{
 		// Little hack needed to do an order by before a group by
-		return DB::select()
+        return DB::select('timestamp', 'group', 'id')
 			->from(array(
 				$this->_select()
 				->where('applied', '>', 0)
@@ -380,6 +380,8 @@ class Model_Minion_Migration extends Model
 				'temp_table'
 			))
 			->group_by('group')
+            ->group_by('timestamp')
+            ->group_by('id')
 			->execute($this->_db)
 			->as_array($key, $value);
 	}
@@ -391,7 +393,7 @@ class Model_Minion_Migration extends Model
 	 */
 	public function fetch_groups($group_as_key = FALSE)
 	{
-		return DB::select()
+		return DB::select('group')
 			->from($this->_table)
 			->group_by('group')
 			->execute($this->_db)
@@ -409,7 +411,6 @@ class Model_Minion_Migration extends Model
 	{
 		$migrations     = array();
 		$current_groups = $this->fetch_groups(TRUE);
-
 		// Make sure the group(s) exist
 		foreach ($group as $group_name)
 		{
@@ -490,8 +491,8 @@ class Model_Minion_Migration extends Model
 				->where('applied', '=', 1)
 				->order_by('timestamp', 'DESC');
 		}
-
-		return array($query->execute($this->_db)->as_array(), $up);
+		$aryToReturn = array($query->execute($this->_db)->as_array(), $up);
+        return $aryToReturn;
 	}
 
 	/**

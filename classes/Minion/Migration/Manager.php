@@ -127,6 +127,7 @@ class Minion_Migration_Manager {
 	{
 		list($migrations, $is_up) = $this->_model->fetch_required_migrations($group, $target);
 
+        Log::instance()->add(Log::ERROR, "migrations: " . print_r($migrations,true). " is up: " . $is_up);
 		$method = $is_up ? 'up' : 'down';
 
 		foreach ($migrations as $migration)
@@ -155,6 +156,7 @@ class Minion_Migration_Manager {
 
 			$class = $this->_model->get_class_from_migration($migration);
 
+            Log::instance()->add(Log::ERROR, "Class is $class, migration is $migration");
 			include_once $file;
 
 			$instance = new $class($migration);
